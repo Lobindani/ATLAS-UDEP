@@ -1,0 +1,287 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Personal Operativo - Atlas Tracking</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        'udep-blue': '#002d72',
+                        'udep-red': '#9e1b32',
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        body { font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; }
+        .custom-scrollbar::-webkit-scrollbar { width: 5px; }
+        .custom-scrollbar::-webkit-scrollbar-track { background: #f1f1f1; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: #d1d5db; border-radius: 10px; }
+    </style>
+</head>
+<body class="bg-gray-100 h-screen flex overflow-hidden">
+
+    <!-- Mobile Sidebar Overlay -->
+    <div id="sidebar-overlay" onclick="toggleSidebar()" class="fixed inset-0 bg-black/50 z-40 hidden lg:hidden"></div>
+
+    <!-- Sidebar -->
+    <aside id="sidebar" class="fixed lg:static inset-y-0 left-0 w-64 bg-udep-blue text-white flex flex-col flex-shrink-0 z-50 transform -translate-x-full lg:translate-x-0 transition-transform duration-300 ease-in-out">
+        <div class="p-6 border-b border-white/10">
+            <div class="flex flex-col">
+                <h1 class="font-black text-xl tracking-tighter uppercase">Atlas <span class="text-udep-red">Tracking</span></h1>
+                <p class="text-[10px] font-bold opacity-60 tracking-widest mt-0.5">LOGÍSTICA INTERNA UDEP</p>
+            </div>
+        </div>
+
+        <nav class="mt-4 flex-1">
+            <a href="index.html" class="flex items-center gap-3 px-6 py-3 hover:bg-white/5 transition-all opacity-70 hover:opacity-100">
+                <span class="text-xs font-bold uppercase tracking-wider">Dashboard</span>
+            </a>
+            <a href="historial.html" class="flex items-center gap-3 px-6 py-3 hover:bg-white/5 transition-all opacity-70 hover:opacity-100">
+                <span class="text-xs font-bold uppercase tracking-wider">Historial de Envíos</span>
+            </a>
+            <a href="personal.html" class="flex items-center gap-3 px-6 py-3 bg-white/10 border-l-4 border-udep-red transition-all">
+                <span class="text-xs font-bold uppercase tracking-wider">Personal Operativo</span>
+            </a>
+            <a href="reportes.html" class="flex items-center gap-3 px-6 py-3 hover:bg-white/5 transition-all opacity-70 hover:opacity-100">
+                <span class="text-xs font-bold uppercase tracking-wider">Reportes y KPIs</span>
+            </a>
+        </nav>
+
+        <div class="p-5 bg-black/20 flex items-center gap-3">
+            <div class="w-9 h-9 rounded-full bg-slate-400 border-2 border-white flex items-center justify-center font-bold text-xs">AC</div>
+            <div class="min-w-0">
+                <p class="text-xs font-bold truncate">A.C. Vásquez</p>
+                <p class="text-[10px] opacity-70 truncate">Jefatura Operativa</p>
+            </div>
+        </div>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="flex-1 flex flex-col min-w-0">
+        <!-- Header -->
+        <header class="h-16 bg-white border-b flex items-center justify-between px-4 lg:px-8 shadow-sm z-10 shrink-0">
+            <div class="flex items-center gap-3">
+                <button onclick="toggleSidebar()" class="lg:hidden p-2 text-udep-blue hover:bg-gray-100 rounded-lg transition-colors">
+                    <span class="text-xl">☰</span>
+                </button>
+                <h2 class="text-sm lg:text-base font-bold text-udep-blue tracking-tight truncate">Gestión de Personal</h2>
+            </div>
+            
+            <div class="flex items-center gap-4">
+                <button onclick="alert('Registro de nuevo conserje')" class="bg-udep-red hover:bg-red-800 text-white text-[10px] lg:text-[11px] font-bold px-3 lg:px-4 py-2 rounded-lg transition-all shadow-sm uppercase tracking-wider">
+                    <span class="hidden sm:inline">+ Registrar Nuevo Conserje</span><span class="sm:hidden">+ NUEVO</span>
+                </button>
+            </div>
+        </header>
+
+        <!-- Content Area -->
+        <div class="flex-1 overflow-y-auto p-4 lg:p-8 custom-scrollbar">
+            
+            <!-- KPIs -->
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 lg:gap-6 mb-6 lg:mb-8">
+                <div class="bg-white rounded-xl p-4 lg:p-6 shadow-sm border border-gray-100">
+                    <p class="text-[10px] lg:text-[11px] font-black text-gray-400 uppercase tracking-widest mb-2">Total de Conserjes</p>
+                    <div class="flex items-end gap-2">
+                        <h3 class="text-2xl lg:text-3xl font-black text-gray-800">8</h3>
+                        <span class="text-[10px] lg:text-[11px] text-gray-400 font-bold mb-1">Personal Activo</span>
+                    </div>
+                </div>
+                <div class="bg-white rounded-xl p-4 lg:p-6 shadow-sm border border-gray-100">
+                    <p class="text-[10px] lg:text-[11px] font-black text-gray-400 uppercase tracking-widest mb-2">En Turno</p>
+                    <div class="flex items-end gap-2 text-green-600">
+                        <h3 class="text-2xl lg:text-3xl font-black">5</h3>
+                        <div class="w-2 h-2 bg-green-500 rounded-full animate-pulse mb-2"></div>
+                    </div>
+                </div>
+                <div class="bg-white rounded-xl p-4 lg:p-6 shadow-sm border border-gray-100 sm:col-span-2 lg:col-span-1">
+                    <p class="text-[10px] lg:text-[11px] font-black text-gray-400 uppercase tracking-widest mb-2">En Descanso</p>
+                    <div class="flex items-end gap-2 text-gray-400">
+                        <h3 class="text-2xl lg:text-3xl font-black">3</h3>
+                        <span class="text-[10px] lg:text-[11px] font-bold mb-1">Fuera de servicio</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Tabla de Personal -->
+            <div class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+                <div class="p-4 lg:p-6 border-b border-gray-50 flex flex-col sm:flex-row justify-between items-start sm:items-center bg-gray-50/50 gap-3">
+                    <h4 class="font-black text-[10px] lg:text-[11px] text-udep-blue uppercase tracking-widest">Directorio de Equipo</h4>
+                    <div class="flex items-center gap-4">
+                        <div class="flex items-center gap-1.5">
+                            <div class="w-2 h-2 bg-green-500 rounded-full"></div>
+                            <span class="text-[9px] font-bold text-gray-500 uppercase">En Línea</span>
+                        </div>
+                        <div class="flex items-center gap-1.5">
+                            <div class="w-2 h-2 bg-red-500 rounded-full"></div>
+                            <span class="text-[9px] font-bold text-gray-500 uppercase">Off</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="overflow-x-auto custom-scrollbar">
+                    <table class="w-full text-left border-collapse min-w-[800px]">
+                        <thead class="bg-gray-50 border-b border-gray-100">
+                            <tr>
+                                <th class="px-6 py-4 text-[10px] font-black text-gray-400 uppercase tracking-widest">Conserje</th>
+                                <th class="px-6 py-4 text-[10px] font-black text-gray-400 uppercase tracking-widest text-center">App Status</th>
+                                <th class="px-6 py-4 text-[10px] font-black text-gray-400 uppercase tracking-widest">Estado</th>
+                                <th class="px-6 py-4 text-[10px] font-black text-gray-400 uppercase tracking-widest">Envíos Hoy</th>
+                                <th class="px-6 py-4 text-[10px] font-black text-gray-400 uppercase tracking-widest">Calificación</th>
+                                <th class="px-6 py-4 text-[10px] font-black text-gray-400 uppercase tracking-widest">Última Ubicación</th>
+                                <th class="px-6 py-4 text-[10px] font-black text-gray-400 uppercase tracking-widest text-center">Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody id="personal-list" class="divide-y divide-gray-50">
+                            <!-- JS Populated -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Modal Perfil (Simple Simulate) -->
+    <div id="modal-personal" class="hidden fixed inset-0 bg-black/50 z-[100] flex items-center justify-center p-4">
+        <div class="bg-white rounded-2xl w-full max-w-lg overflow-hidden shadow-2xl transform transition-all">
+            <div class="p-6 border-b border-gray-100 flex justify-between items-center bg-udep-blue text-white">
+                <h3 class="font-bold uppercase tracking-widest text-xs">Ficha de Desempeño Operativo</h3>
+                <button onclick="closeModal()" class="text-white/50 hover:text-white transition-colors text-2xl leading-none">&times;</button>
+            </div>
+            <div class="p-8 pb-4" id="modal-content">
+                <!-- JS Populated -->
+            </div>
+            <div class="p-6 border-t border-gray-100 bg-gray-50 flex justify-between items-center">
+                <button onclick="alert('Funcionalidad de Asignación de Zona')" class="px-4 py-2 bg-udep-blue text-white font-bold rounded-lg text-[10px] uppercase tracking-widest hover:brightness-110 transition-all">
+                    Asignar Nueva Zona
+                </button>
+                <button onclick="closeModal()" class="px-6 py-2 bg-gray-200 text-gray-600 font-bold rounded-lg text-xs uppercase tracking-widest hover:bg-gray-300 transition-all">Cerrar</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const personal = [
+            { id: 1, nombre: 'Juan Pérez', avatar: 'JP', estado: 'Disponible', envios: 12, rating: '4.9/5', ubicacion: 'Edificio E', online: true },
+            { id: 2, nombre: 'Marcos Silva', avatar: 'MS', estado: 'En Ruta', envios: 15, rating: '4.8/5', ubicacion: 'Ingeniería', online: true },
+            { id: 3, nombre: 'Roberto Gomez', avatar: 'RG', estado: 'Disponible', envios: 8, rating: '4.7/5', ubicacion: 'Rectorado', online: true },
+            { id: 4, nombre: 'Ana Lucrecia', avatar: 'AL', estado: 'En Almuerzo', envios: 10, rating: '5.0/5', ubicacion: 'Cafetería Gutza', online: false },
+            { id: 5, nombre: 'Dante Vasquez', avatar: 'DV', estado: 'En Ruta', envios: 14, rating: '4.6/5', ubicacion: 'Derecho', online: true },
+            { id: 6, nombre: 'Samuel Castro', avatar: 'SC', estado: 'Disponible', envios: 9, rating: '4.8/5', ubicacion: 'E. Comunicación', online: true },
+            { id: 7, nombre: 'Luis Torres', avatar: 'LT', estado: 'Descanso', envios: 0, rating: '4.9/5', ubicacion: '---', online: false },
+            { id: 8, nombre: 'Marcos Rivas', avatar: 'MR', estado: 'Descanso', envios: 0, rating: '4.5/5', ubicacion: '---', online: false }
+        ];
+
+        function renderPersonal() {
+            const list = document.getElementById('personal-list');
+            list.innerHTML = '';
+            
+            personal.forEach(p => {
+                const tr = document.createElement('tr');
+                tr.className = 'hover:bg-gray-50 transition-colors bg-white border-b border-gray-50 last:border-0';
+                
+                let statusClass = 'bg-gray-100 text-gray-500';
+                if (p.estado === 'Disponible') statusClass = 'bg-green-100 text-green-700 border-green-200';
+                if (p.estado === 'En Ruta') statusClass = 'bg-blue-100 text-blue-700 border-blue-200';
+                if (p.estado === 'En Almuerzo') statusClass = 'bg-yellow-100 text-yellow-700 border-yellow-200';
+
+                tr.innerHTML = `
+                    <td class="px-6 py-4">
+                        <div class="flex items-center gap-3">
+                            <div class="w-8 h-8 rounded-full bg-gray-200 flex items-center justify-center font-bold text-[10px] text-gray-600 border border-gray-300">${p.avatar}</div>
+                            <span class="text-[13px] font-bold text-gray-800">${p.nombre}</span>
+                        </div>
+                    </td>
+                    <td class="px-6 py-4 text-center">
+                        <div class="w-2.5 h-2.5 rounded-full mx-auto ${p.online ? 'bg-green-500 shadow-[0_0_5px_#22c55e]' : 'bg-red-400'}"></div>
+                    </td>
+                    <td class="px-6 py-4">
+                        <span class="px-2 py-0.5 rounded-full text-[9px] font-black uppercase border ${statusClass}">
+                            ${p.estado}
+                        </span>
+                    </td>
+                    <td class="px-6 py-4 text-[12px] font-bold text-gray-600">${p.envios}</td>
+                    <td class="px-6 py-4">
+                        <div class="flex items-center gap-1">
+                            <span class="text-[12px] font-black text-gray-800">${p.rating}</span>
+                            <span class="text-yellow-400">⭐</span>
+                        </div>
+                    </td>
+                    <td class="px-6 py-4 text-[11px] text-gray-500 font-medium italic">${p.ubicacion}</td>
+                    <td class="px-6 py-4 text-center">
+                        <button onclick="verPerfil(${p.id})" class="text-[10px] font-bold text-udep-blue hover:underline uppercase tracking-tighter">
+                            Ver Perfil
+                        </button>
+                    </td>
+                `;
+                list.appendChild(tr);
+            });
+        }
+
+        // --- Funciones Responsivas ---
+        function toggleSidebar() {
+            const sidebar = document.getElementById('sidebar');
+            const overlay = document.getElementById('sidebar-overlay');
+            sidebar.classList.toggle('-translate-x-full');
+            overlay.classList.toggle('hidden');
+        }
+
+        function verPerfil(id) {
+            const p = personal.find(item => item.id === id);
+            if (!p) return;
+
+            const modal = document.getElementById('modal-personal');
+            const content = document.getElementById('modal-content');
+
+            content.innerHTML = `
+                <div class="flex items-center gap-6 mb-8">
+                    <div class="w-20 h-20 rounded-2xl bg-gray-100 flex items-center justify-center text-2xl font-black text-gray-400 border-2 border-gray-200">
+                        ${p.avatar}
+                    </div>
+                    <div>
+                        <h4 class="text-xl font-black text-gray-800">${p.nombre}</h4>
+                        <p class="text-xs text-gray-500 font-bold uppercase tracking-widest mt-1">Conserje de Logística Nivel 2</p>
+                        <div class="flex items-center gap-2 mt-3">
+                            <span class="w-2 h-2 rounded-full ${p.online ? 'bg-green-500' : 'bg-red-500'}"></span>
+                            <span class="text-[10px] font-bold uppercase ${p.online ? 'text-green-600' : 'text-red-500'}">
+                                ${p.online ? 'Dispositivo en Línea' : 'Desconectado'}
+                            </span>
+                        </div>
+                    </div>
+                </div>
+                <div class="grid grid-cols-2 gap-6 bg-gray-50 p-6 rounded-2xl border border-gray-100">
+                    <div>
+                        <p class="text-[10px] font-black text-gray-400 uppercase mb-1">Efectividad Mensual</p>
+                        <p class="text-base font-black text-gray-800">97.5%</p>
+                    </div>
+                    <div>
+                        <p class="text-[10px] font-black text-gray-400 uppercase mb-1">Tiempo de Respuesta</p>
+                        <p class="text-base font-black text-gray-800">12 min</p>
+                    </div>
+                    <div>
+                        <p class="text-[10px] font-black text-gray-400 uppercase mb-1">Incidencias</p>
+                        <p class="text-base font-black text-green-600">0 Reportadas</p>
+                    </div>
+                    <div>
+                        <p class="text-[10px] font-black text-gray-400 uppercase mb-1">Zona Asignada</p>
+                        <p class="text-base font-black text-udep-blue">${p.ubicacion !== '---' ? p.ubicacion : 'Sin Asignar'}</p>
+                    </div>
+                </div>
+            `;
+
+            modal.classList.remove('hidden');
+        }
+
+        function closeModal() {
+            document.getElementById('modal-personal').classList.add('hidden');
+        }
+
+        document.addEventListener('DOMContentLoaded', renderPersonal);
+    </script>
+</body>
+</html>

@@ -1,0 +1,354 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Historial de Envíos - Atlas Tracking</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        'udep-blue': '#002d72',
+                        'udep-red': '#9e1b32',
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        body { font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; }
+        .custom-scrollbar::-webkit-scrollbar { width: 5px; }
+        .custom-scrollbar::-webkit-scrollbar-track { background: #f1f1f1; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: #d1d5db; border-radius: 10px; }
+    </style>
+</head>
+<body class="bg-gray-100 h-screen flex overflow-hidden">
+
+    <!-- Mobile Sidebar Overlay -->
+    <div id="sidebar-overlay" onclick="toggleSidebar()" class="fixed inset-0 bg-black/50 z-40 hidden lg:hidden"></div>
+
+    <!-- Sidebar -->
+    <aside id="sidebar" class="fixed lg:static inset-y-0 left-0 w-64 bg-udep-blue text-white flex flex-col flex-shrink-0 z-50 transform -translate-x-full lg:translate-x-0 transition-transform duration-300 ease-in-out">
+        <div class="p-6 border-b border-white/10">
+            <div class="flex flex-col">
+                <h1 class="font-black text-xl tracking-tighter uppercase">Atlas <span class="text-udep-red">Tracking</span></h1>
+                <p class="text-[10px] font-bold opacity-60 tracking-widest mt-0.5" id="nav-dashboard">LOGÍSTICA INTERNA UDEP</p>
+            </div>
+        </div>
+
+        <nav class="mt-4 flex-1">
+            <a href="index.html" class="flex items-center gap-3 px-6 py-3 hover:bg-white/5 transition-all opacity-70 hover:opacity-100">
+                <span class="text-xs font-bold uppercase tracking-wider">Dashboard</span>
+            </a>
+            <a href="historial.html" class="flex items-center gap-3 px-6 py-3 bg-white/10 border-l-4 border-udep-red transition-all">
+                <span class="text-xs font-bold uppercase tracking-wider">Historial de Envíos</span>
+            </a>
+            <a href="personal.html" class="flex items-center gap-3 px-6 py-3 hover:bg-white/5 transition-all opacity-70 hover:opacity-100">
+                <span class="text-xs font-bold uppercase tracking-wider">Personal Operativo</span>
+            </a>
+            <a href="reportes.html" class="flex items-center gap-3 px-6 py-3 hover:bg-white/5 transition-all opacity-70 hover:opacity-100">
+                <span class="text-xs font-bold uppercase tracking-wider">Reportes y KPIs</span>
+            </a>
+        </nav>
+
+        <div class="p-5 bg-black/20 flex items-center gap-3">
+            <div class="w-9 h-9 rounded-full bg-slate-400 border-2 border-white flex items-center justify-center font-bold text-xs" id="user-avatar">AC</div>
+            <div class="min-w-0">
+                <p class="text-xs font-bold truncate">A.C. Vásquez</p>
+                <p class="text-[10px] opacity-70 truncate">Jefatura Operativa</p>
+            </div>
+        </div>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="flex-1 flex flex-col min-w-0">
+        <!-- Header -->
+        <header class="h-16 bg-white border-b flex items-center justify-between px-4 lg:px-8 shadow-sm z-10 shrink-0">
+            <div class="flex items-center gap-3">
+                <button onclick="toggleSidebar()" class="lg:hidden p-2 text-udep-blue hover:bg-gray-100 rounded-lg transition-colors">
+                    <span class="text-xl">☰</span>
+                </button>
+                <h2 class="text-sm lg:text-base font-bold text-udep-blue tracking-tight truncate">Historial y Trazabilidad</h2>
+            </div>
+            
+            <div class="flex items-center gap-4">
+                <button onclick="exportarExcel()" class="bg-green-600 hover:bg-green-700 text-white text-[10px] lg:text-[11px] font-bold px-3 lg:px-4 py-2 rounded-lg flex items-center gap-2 transition-all shadow-sm uppercase tracking-wider">
+                    <span class="text-lg hidden sm:inline">📊</span> <span class="hidden sm:inline">Descargar Reporte Excel</span><span class="sm:hidden">EXCEL</span>
+                </button>
+            </div>
+        </header>
+
+        <!-- Content Area -->
+        <div class="flex-1 overflow-y-auto p-4 lg:p-8 custom-scrollbar">
+            
+            <!-- KPIs Fila 1 -->
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 lg:gap-6 mb-6 lg:mb-8">
+                <!-- Total del Mes -->
+                <div class="bg-white rounded-xl p-4 lg:p-5 shadow-sm border-l-4 border-udep-blue flex items-center gap-4">
+                    <div class="p-2 lg:p-3 bg-blue-50 rounded-lg text-udep-blue text-xl lg:text-2xl">📈</div>
+                    <div>
+                        <p class="text-[9px] lg:text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">Total (Mes)</p>
+                        <h3 class="text-xl lg:text-2xl font-black text-gray-800">1,248</h3>
+                    </div>
+                </div>
+                <!-- Tiempo Promedio -->
+                <div class="bg-white rounded-xl p-4 lg:p-5 shadow-sm border-l-4 border-udep-red flex items-center gap-4">
+                    <div class="p-2 lg:p-3 bg-red-50 rounded-lg text-udep-red text-xl lg:text-2xl">⏱️</div>
+                    <div>
+                        <p class="text-[9px] lg:text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">Promedio</p>
+                        <h3 class="text-xl lg:text-2xl font-black text-gray-800">42 min</h3>
+                    </div>
+                </div>
+                <!-- Efectividad -->
+                <div class="bg-white rounded-xl p-4 lg:p-5 shadow-sm border-l-4 border-green-500 flex items-center gap-4">
+                    <div class="p-2 lg:p-3 bg-green-50 rounded-lg text-green-600 text-xl lg:text-2xl">✔️</div>
+                    <div>
+                        <p class="text-[9px] lg:text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">Efectividad</p>
+                        <h3 class="text-xl lg:text-2xl font-black text-gray-800">98.4%</h3>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Filtros -->
+            <div class="bg-white p-4 lg:p-6 rounded-xl shadow-sm border border-gray-100 mb-6 font-bold">
+                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 items-end">
+                    <!-- Buscador -->
+                    <div class="sm:col-span-1 lg:col-span-1">
+                        <label class="block text-[10px] font-black text-gray-400 uppercase mb-2">Buscador</label>
+                        <div class="flex items-center bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 focus-within:border-udep-blue transition-all">
+                            <span class="text-gray-400 mr-2 text-xs">🔍</span>
+                            <input 
+                                type="text" 
+                                id="search-historial" 
+                                oninput="filtrarHistorial()"
+                                placeholder="ID o Solicitante..." 
+                                class="bg-transparent border-none text-[12px] outline-none w-full text-gray-700"
+                            >
+                        </div>
+                    </div>
+                    
+                    <!-- Rango de Fechas -->
+                    <div>
+                        <label class="block text-[10px] font-black text-gray-400 uppercase mb-2">Rango</label>
+                        <select id="date-filter" onchange="filtrarHistorial()" class="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-[12px] font-bold text-gray-600 outline-none cursor-pointer focus:border-udep-blue">
+                            <option value="today">Hoy</option>
+                            <option value="7days">Últimos 7 días</option>
+                            <option value="month" selected>Este mes</option>
+                            <option value="all">Todo el año</option>
+                        </select>
+                    </div>
+
+                    <!-- Estado -->
+                    <div>
+                        <label class="block text-[10px] font-black text-gray-400 uppercase mb-2">Estado</label>
+                        <select id="estado-filter" onchange="filtrarHistorial()" class="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-[12px] font-bold text-gray-600 outline-none cursor-pointer focus:border-udep-blue">
+                            <option value="todos">Todos los Estados</option>
+                            <option value="Entregado">Entregados</option>
+                            <option value="En ruta">En Ruta</option>
+                            <option value="Cancelado">Cancelados</option>
+                        </select>
+                    </div>
+
+                    <!-- Reset -->
+                    <div class="flex justify-start sm:justify-end">
+                        <button onclick="resetFiltros()" class="text-[10px] font-bold text-gray-400 hover:text-udep-red transition-colors uppercase tracking-widest flex items-center gap-1 p-2">
+                            <span>🔄</span> REINICIAR
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Tabla de Historial -->
+            <div class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+                <div class="overflow-x-auto custom-scrollbar">
+                    <table class="w-full text-left border-collapse min-w-[800px]">
+                    <thead class="bg-gray-50 border-b border-gray-100">
+                        <tr>
+                            <th class="px-6 py-4 text-[10px] font-black text-gray-400 uppercase tracking-widest">ID</th>
+                            <th class="px-6 py-4 text-[10px] font-black text-gray-400 uppercase tracking-widest">Fecha Registro</th>
+                            <th class="px-6 py-4 text-[10px] font-black text-gray-400 uppercase tracking-widest">Origen</th>
+                            <th class="px-6 py-4 text-[10px] font-black text-gray-400 uppercase tracking-widest">Destino</th>
+                            <th class="px-6 py-4 text-[10px] font-black text-gray-400 uppercase tracking-widest">Conserje</th>
+                            <th class="px-6 py-4 text-[10px] font-black text-gray-400 uppercase tracking-widest">Entrega</th>
+                            <th class="px-6 py-4 text-[10px] font-black text-gray-400 uppercase tracking-widest">Estado</th>
+                            <th class="px-6 py-4 text-[10px] font-black text-gray-400 uppercase tracking-widest text-center">Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tabla-historial" class="divide-y divide-gray-50">
+                        <!-- JS Populated -->
+                    </tbody>
+                </table>
+                <div id="no-results" class="hidden p-20 text-center">
+                    <p class="text-gray-400 font-medium">No se encontraron registros para el filtro seleccionado.</p>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Modal Detalle (Simple Simulate) -->
+    <div id="modal-detalle" class="hidden fixed inset-0 bg-black/50 z-[100] flex items-center justify-center p-4">
+        <div class="bg-white rounded-2xl w-full max-w-lg overflow-hidden shadow-2xl transform transition-all">
+            <div class="p-6 border-b border-gray-100 flex justify-between items-center bg-udep-blue text-white">
+                <h3 class="font-bold uppercase tracking-widest text-xs" id="modal-title">Detalle de Envío #000</h3>
+                <button onclick="closeModal()" class="text-white/50 hover:text-white transition-colors text-2xl leading-none">&times;</button>
+            </div>
+            <div class="p-8 space-y-6" id="modal-content">
+                <!-- JS Populated -->
+            </div>
+            <div class="p-6 border-t border-gray-100 bg-gray-50 flex justify-end">
+                <button onclick="closeModal()" class="px-6 py-2 bg-gray-200 text-gray-600 font-bold rounded-lg text-xs uppercase tracking-widest hover:bg-gray-300 transition-all">Cerrar</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // --- Mock Data ---
+        const dataHistorial = [
+            { id: 1045, fecha: '28/04/2026', origen: 'Edificio E', destino: 'Ingeniería Civil', conserje: 'Juan Pérez', hora: '10:45 AM', estado: 'Entregado' },
+            { id: 1044, fecha: '28/04/2026', origen: 'Derecho', destino: 'Rectorado', conserje: 'Marcos Silva', hora: '09:30 AM', estado: 'Entregado' },
+            { id: 1043, fecha: '27/04/2026', origen: 'Biblioteca', destino: 'E. Comunicación', conserje: 'Juan Pérez', hora: '04:15 PM', estado: 'Cancelado' },
+            { id: 1042, fecha: '27/04/2026', origen: 'Instituto Confucio', destino: 'Postgrado', conserje: 'Roberto Gomez', hora: '11:20 AM', estado: 'Entregado' },
+            { id: 1041, fecha: '26/04/2026', origen: 'Edificio 80', destino: 'CPA', conserje: 'Marcos Silva', hora: '02:00 PM', estado: 'Entregado' },
+            { id: 1040, fecha: '25/04/2026', origen: 'Polideportivo', destino: 'E-Ingeniería', conserje: 'Roberto Gomez', hora: '08:45 AM', estado: 'Entregado' },
+            { id: 1039, fecha: '25/04/2026', origen: 'Gobierno', destino: 'Derecho', conserje: 'Juan Pérez', hora: '--', estado: 'Cancelado' }
+        ];
+
+        function renderHistorial(lista = dataHistorial) {
+            const tbody = document.getElementById('tabla-historial');
+            const noResults = document.getElementById('no-results');
+            
+            tbody.innerHTML = '';
+            
+            if (lista.length === 0) {
+                noResults.classList.remove('hidden');
+                return;
+            } else {
+                noResults.classList.add('hidden');
+            }
+
+            lista.forEach(item => {
+                const tr = document.createElement('tr');
+                tr.className = 'hover:bg-gray-50 transition-colors bg-white border-b border-gray-50 last:border-0';
+                
+                let badgeStyle = item.estado === 'Entregado' 
+                    ? 'bg-green-50 text-green-600 border-green-100' 
+                    : 'bg-red-50 text-red-600 border-red-100';
+
+                tr.innerHTML = `
+                    <td class="px-6 py-4 text-[13px] font-bold text-gray-800">#${item.id}</td>
+                    <td class="px-6 py-4 text-[12px] text-gray-500 font-medium">${item.fecha}</td>
+                    <td class="px-6 py-4 text-[12px] text-gray-700 truncate max-w-[120px]">${item.origen}</td>
+                    <td class="px-6 py-4 text-[12px] text-gray-700 truncate max-w-[120px]">${item.destino}</td>
+                    <td class="px-6 py-4 text-[12px] text-gray-600">${item.conserje}</td>
+                    <td class="px-6 py-4 text-[12px] text-gray-500 font-bold">${item.hora}</td>
+                    <td class="px-6 py-4">
+                        <span class="px-2 py-1 rounded text-[10px] font-black uppercase border ${badgeStyle}">
+                            ${item.estado}
+                        </span>
+                    </td>
+                    <td class="px-6 py-4 text-center">
+                        <button onclick="verDetalle(${item.id})" class="p-2 hover:bg-gray-100 rounded-lg text-udep-blue transition-all" title="Ver Detalle">
+                            <span class="text-lg">👁️</span>
+                        </button>
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        // --- Funciones Responsivas ---
+        function toggleSidebar() {
+            const sidebar = document.getElementById('sidebar');
+            const overlay = document.getElementById('sidebar-overlay');
+            sidebar.classList.toggle('-translate-x-full');
+            overlay.classList.toggle('hidden');
+        }
+
+        function filtrarHistorial() {
+            const query = document.getElementById('search-historial').value.toLowerCase();
+            const estado = document.getElementById('estado-filter').value;
+            
+            const filtrados = dataHistorial.filter(item => {
+                const matchesSearch = item.id.toString().includes(query) || item.conserje.toLowerCase().includes(query);
+                const matchesEstado = estado === 'todos' || item.estado === estado;
+                return matchesSearch && matchesEstado;
+            });
+            
+            renderHistorial(filtrados);
+        }
+
+        function resetFiltros() {
+            document.getElementById('search-historial').value = '';
+            document.getElementById('estado-filter').value = 'todos';
+            document.getElementById('date-filter').value = 'month';
+            renderHistorial();
+        }
+
+        function verDetalle(id) {
+            const item = dataHistorial.find(i => i.id === id);
+            if (!item) return;
+
+            const modal = document.getElementById('modal-detalle');
+            const title = document.getElementById('modal-title');
+            const content = document.getElementById('modal-content');
+
+            title.textContent = `Detalle de Envío #${item.id}`;
+            content.innerHTML = `
+                <div class="grid grid-cols-2 gap-8">
+                    <div>
+                        <p class="text-[10px] font-black text-gray-400 uppercase mb-1">Ruta Completa</p>
+                        <p class="text-sm font-bold text-gray-800">${item.origen} <span class="text-udep-red mx-1">→</span> ${item.destino}</p>
+                    </div>
+                    <div>
+                        <p class="text-[10px] font-black text-gray-400 uppercase mb-1">Responsable</p>
+                        <p class="text-sm font-bold text-gray-800">${item.conserje}</p>
+                    </div>
+                    <div>
+                        <p class="text-[10px] font-black text-gray-400 uppercase mb-1">Fecha y Hora</p>
+                        <p class="text-sm font-bold text-gray-800">${item.fecha} - ${item.hora}</p>
+                    </div>
+                    <div>
+                        <p class="text-[10px] font-black text-gray-400 uppercase mb-1">Evidencia Digital</p>
+                        <div class="flex items-center gap-2 text-green-600">
+                           <span class="text-xl">✍️</span>
+                           <span class="text-xs font-bold uppercase underline cursor-pointer">Ver Firma Digital</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="bg-gray-50 p-4 rounded-xl border border-gray-100">
+                    <p class="text-[10px] font-black text-gray-400 uppercase mb-2">Trazabilidad de Eventos</p>
+                    <div class="space-y-3">
+                        <div class="flex gap-3 items-center">
+                            <div class="w-2 h-2 rounded-full bg-blue-500"></div>
+                            <p class="text-[11px] text-gray-600 underline">08:00 AM - Solicitud registrada por sistema.</p>
+                        </div>
+                        <div class="flex gap-3 items-center">
+                            <div class="w-2 h-2 rounded-full bg-udep-red"></div>
+                            <p class="text-[11px] text-gray-600 underline">08:30 AM - Paquete recolectado por Juan Pérez.</p>
+                        </div>
+                        <div class="flex gap-3 items-center">
+                            <div class="w-2 h-2 rounded-full bg-green-500"></div>
+                            <p class="text-[11px] text-gray-600 underline">${item.hora} - Entrega finalizada y firmada.</p>
+                        </div>
+                    </div>
+                </div>
+            `;
+
+            modal.classList.remove('hidden');
+        }
+
+        function closeModal() {
+            document.getElementById('modal-detalle').classList.add('hidden');
+        }
+
+        function exportarExcel() {
+            alert("Preparando reporte de envíos (XLSX)...\nDescarga iniciada para el rango: Este Mes.");
+        }
+
+        // Init
+        document.addEventListener('DOMContentLoaded', () => renderHistorial());
+    </script>
+</body>
+</html>

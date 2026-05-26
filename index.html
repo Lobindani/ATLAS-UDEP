@@ -1,0 +1,769 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Atlas Tracking - UDEP</title>
+    <!-- Leaflet GIS -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin=""/>
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        'udep-blue': '#002d72',
+                        'udep-red': '#9e1b32',
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        body { font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; }
+        :root {
+            --udep-blue: #002d72;
+            --udep-red: #9e1b32;
+        }
+        .custom-scrollbar::-webkit-scrollbar { width: 5px; }
+        .custom-scrollbar::-webkit-scrollbar-track { background: #f1f1f1; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: #d1d5db; border-radius: 10px; }
+        .map-bg {
+            background-color: #e2e8f0;
+            background-image: radial-gradient(#cbd5e1 1px, transparent 1px);
+            background-size: 20px 20px;
+        }
+        .marker-pulse {
+            animation: pulse-animation 2s infinite;
+        }
+        @keyframes pulse-animation {
+            0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(158, 27, 50, 0.7); }
+            70% { transform: scale(1); box-shadow: 0 0 0 10px rgba(158, 27, 50, 0); }
+            100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(158, 27, 50, 0); }
+        }
+    </style>
+</head>
+<body class="bg-gray-100 h-screen flex overflow-hidden">
+
+    <!-- Mobile Sidebar Overlay -->
+    <div id="sidebar-overlay" onclick="toggleSidebar()" class="fixed inset-0 bg-black/50 z-40 hidden lg:hidden"></div>
+
+    <!-- Sidebar -->
+    <aside id="sidebar" class="fixed lg:static inset-y-0 left-0 w-64 bg-udep-blue text-white flex flex-col flex-shrink-0 z-50 transform -translate-x-full lg:translate-x-0 transition-transform duration-300 ease-in-out">
+        <div class="p-6 border-b border-white/10">
+            <div class="flex flex-col">
+                <h1 class="font-black text-xl tracking-tighter uppercase">Atlas <span class="text-udep-red">Tracking</span></h1>
+                <p class="text-[10px] font-bold opacity-60 tracking-widest mt-0.5">LOGÍSTICA INTERNA UDEP</p>
+            </div>
+        </div>
+
+        <nav class="mt-4 flex-1">
+            <a href="index.html" class="flex items-center gap-3 px-6 py-3 bg-white/10 border-l-4 border-udep-red transition-all">
+                <span class="text-xs font-bold uppercase tracking-wider">Dashboard</span>
+            </a>
+            <a href="historial.html" class="flex items-center gap-3 px-6 py-3 hover:bg-white/5 transition-all opacity-70 hover:opacity-100">
+                <span class="text-xs font-bold uppercase tracking-wider">Historial de Envíos</span>
+            </a>
+            <a href="personal.html" class="flex items-center gap-3 px-6 py-3 hover:bg-white/5 transition-all opacity-70 hover:opacity-100">
+                <span class="text-xs font-bold uppercase tracking-wider">Personal Operativo</span>
+            </a>
+            <a href="reportes.html" class="flex items-center gap-3 px-6 py-3 hover:bg-white/5 transition-all opacity-70 hover:opacity-100">
+                <span class="text-xs font-bold uppercase tracking-wider">Reportes y KPIs</span>
+            </a>
+        </nav>
+
+        <div class="p-5 bg-black/20 flex items-center gap-3">
+            <div class="w-9 h-9 rounded-full bg-slate-400 border-2 border-white flex items-center justify-center font-bold text-xs">AC</div>
+            <div class="min-w-0">
+                <p class="text-xs font-bold truncate">A.C. Vásquez</p>
+                <p class="text-[10px] opacity-70 truncate">Jefatura Operativa</p>
+            </div>
+        </div>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="flex-1 flex flex-col min-w-0">
+        <!-- Header -->
+        <header class="h-16 bg-white border-b flex items-center justify-between px-4 lg:px-8 shadow-sm z-10 shrink-0">
+            <div class="flex items-center gap-3">
+                <button onclick="toggleSidebar()" class="lg:hidden p-2 text-udep-blue hover:bg-gray-100 rounded-lg transition-colors">
+                    <span class="text-xl">☰</span>
+                </button>
+                <h2 class="text-sm lg:text-base font-bold text-udep-blue tracking-tight truncate">Panel de Control Central</h2>
+            </div>
+            
+            <div class="flex items-center gap-4 lg:gap-6">
+                <!-- Notifications Bell -->
+                <div class="relative">
+                    <button onclick="toggleNotifications()" class="relative text-gray-400 hover:text-udep-blue transition-colors cursor-pointer p-1">
+                        <span class="text-xl leading-none">🔔</span>
+                        <span id="notif-badge" class="absolute -top-1 -right-1 bg-udep-red text-white text-[9px] font-bold px-1.5 py-0.5 rounded-full border border-white">0</span>
+                    </button>
+
+                    <!-- Notifications Panel -->
+                    <div id="notif-panel" class="hidden absolute right-0 mt-3 w-80 bg-white rounded-xl shadow-2xl border border-gray-100 z-50 overflow-hidden">
+                        <div class="p-4 border-b border-gray-50 flex justify-between items-center bg-gray-50">
+                            <h5 class="text-[11px] font-black text-udep-blue uppercase tracking-widest">Centro de Actividad</h5>
+                            <button onclick="clearNotifications()" class="text-[9px] font-bold text-gray-400 hover:text-udep-red uppercase">Limpiar</button>
+                        </div>
+                        <div id="notif-list" class="max-h-80 overflow-y-auto custom-scrollbar">
+                            <!-- JS Populated -->
+                            <div class="p-8 text-center text-gray-400 text-xs">No hay notificaciones recientes.</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </header>
+
+        <!-- Dynamic Content Area -->
+        <div class="flex-1 overflow-y-auto p-4 lg:p-8 custom-scrollbar">
+            
+            <!-- KPIs Fila 1 -->
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+                <!-- Total -->
+                <div class="bg-white rounded-xl p-4 shadow-sm border-b-4 border-slate-400">
+                    <p class="text-[11px] font-bold text-gray-500 uppercase tracking-widest leading-none mb-2">Total del Día</p>
+                    <h3 id="kpi-total" class="text-2xl font-black text-gray-800">0</h3>
+                </div>
+                <!-- Pendientes -->
+                <div class="bg-white rounded-xl p-4 shadow-sm border-b-4 border-yellow-400">
+                    <p class="text-[11px] font-bold text-gray-500 uppercase tracking-widest leading-none mb-2">Pendientes</p>
+                    <h3 id="kpi-pending" class="text-2xl font-black text-gray-800">0</h3>
+                </div>
+                <!-- En Ruta -->
+                <div class="bg-white rounded-xl p-4 shadow-sm border-b-4 border-udep-blue">
+                    <p class="text-[11px] font-bold text-gray-500 uppercase tracking-widest leading-none mb-2">En Ruta</p>
+                    <h3 id="kpi-route" class="text-2xl font-black text-gray-800">0</h3>
+                </div>
+                <!-- Entregados -->
+                <div class="bg-white rounded-xl p-4 shadow-sm border-b-4 border-green-500">
+                    <p class="text-[11px] font-bold text-gray-500 uppercase tracking-widest leading-none mb-2">Entregados</p>
+                    <h3 id="kpi-delivered" class="text-2xl font-black text-gray-800">0</h3>
+                </div>
+            </div>
+
+            <!-- Registro y Mapa Fila 2 -->
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
+                <!-- Panel de Registro -->
+                <div class="bg-white rounded-xl shadow-sm border border-gray-100 flex flex-col min-h-[300px]">
+                    <div class="p-4 border-b border-gray-50">
+                        <h4 class="font-bold text-[13px] text-udep-blue flex items-center gap-2 uppercase tracking-wide">
+                            <span class="text-udep-red text-lg">⊕</span> Nuevo Registro de Envío
+                        </h4>
+                    </div>
+                    <form id="registro-form" class="p-4 flex-1 flex flex-col justify-between">
+                        <div class="space-y-3">
+                            <div>
+                                <label class="block text-[10px] font-bold text-gray-500 uppercase mb-1">Edificio Origen</label>
+                                <select id="origen" required class="w-full px-3 py-1.5 bg-white border border-gray-300 rounded-md focus:border-udep-blue transition-all outline-none text-xs cursor-pointer">
+                                    <option value="" disabled selected>Seleccione un edificio...</option>
+                                    <option value="Edificio 80">Edificio 80</option>
+                                    <option value="Edificio A-Instituto Confucio">Edificio A-Instituto Confucio</option>
+                                    <option value="Edificio IME">Edificio IME</option>
+                                    <option value="Centro de producción audiovisual (CPA)">Centro de producción audiovisual (CPA)</option>
+                                    <option value="Edificio Comunicación">Edificio Comunicación</option>
+                                    <option value="Edificio Principal">Edificio Principal</option>
+                                    <option value="Edificio de Ingeniería Civil">Edificio de Ingeniería Civil</option>
+                                    <option value="Edificio de Educación">Edificio de Educación</option>
+                                    <option value="Edificio de Gobierno">Edificio de Gobierno</option>
+                                    <option value="Edificio de Química">Edificio de Química</option>
+                                    <option value="Edificio de Derecho">Edificio de Derecho</option>
+                                    <option value="Bloque de Arquitectura">Bloque de Arquitectura</option>
+                                    <option value="Edificio E">Edificio E</option>
+                                    <option value="Bloque Ermita">Bloque Ermita</option>
+                                    <option value="Bloque Pileta">Bloque Pileta</option>
+                                    <option value="Complejo deportivo UDEP">Complejo deportivo UDEP</option>
+                                    <option value="Playa 1 CP">Playa 1 CP</option>
+                                    <option value="Bloque Cafetería Gutza">Bloque Cafetería Gutza</option>
+                                    <option value="Bloque Cafetería Sartén y Mango">Bloque Cafetería Sartén y Mango</option>
+                                    <option value="Edificio CMI">Edificio CMI</option>
+                                    <option value="Edificio de Hidráulica">Edificio de Hidráulica</option>
+                                    <option value="Playas de estacionamientos">Playas de estacionamientos</option>
+                                    <option value="Polideportivo">Polideportivo</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="block text-[10px] font-bold text-gray-500 uppercase mb-1">Edificio Destino</label>
+                                <select id="destino" required class="w-full px-3 py-1.5 bg-white border border-gray-300 rounded-md focus:border-udep-blue transition-all outline-none text-xs cursor-pointer">
+                                    <option value="" disabled selected>Seleccione un edificio...</option>
+                                    <option value="Edificio 80">Edificio 80</option>
+                                    <option value="Edificio A-Instituto Confucio">Edificio A-Instituto Confucio</option>
+                                    <option value="Edificio IME">Edificio IME</option>
+                                    <option value="Centro de producción audiovisual (CPA)">Centro de producción audiovisual (CPA)</option>
+                                    <option value="Edificio Comunicación">Edificio Comunicación</option>
+                                    <option value="Edificio Principal">Edificio Principal</option>
+                                    <option value="Edificio de Ingeniería Civil">Edificio de Ingeniería Civil</option>
+                                    <option value="Edificio de Educación">Edificio de Educación</option>
+                                    <option value="Edificio de Gobierno">Edificio de Gobierno</option>
+                                    <option value="Edificio de Química">Edificio de Química</option>
+                                    <option value="Edificio de Derecho">Edificio de Derecho</option>
+                                    <option value="Bloque de Arquitectura">Bloque de Arquitectura</option>
+                                    <option value="Edificio E">Edificio E</option>
+                                    <option value="Bloque Ermita">Bloque Ermita</option>
+                                    <option value="Bloque Pileta">Bloque Pileta</option>
+                                    <option value="Complejo deportivo UDEP">Complejo deportivo UDEP</option>
+                                    <option value="Playa 1 CP">Playa 1 CP</option>
+                                    <option value="Bloque Cafetería Gutza">Bloque Cafetería Gutza</option>
+                                    <option value="Bloque Cafetería Sartén y Mango">Bloque Cafetería Sartén y Mango</option>
+                                    <option value="Edificio CMI">Edificio CMI</option>
+                                    <option value="Edificio de Hidráulica">Edificio de Hidráulica</option>
+                                    <option value="Playas de estacionamientos">Playas de estacionamientos</option>
+                                    <option value="Polideportivo">Polideportivo</option>
+                                </select>
+                            </div>
+                            <div class="grid grid-cols-2 gap-3">
+                                <div>
+                                    <label class="block text-[10px] font-bold text-gray-500 uppercase mb-1">Tipo</label>
+                                    <select id="tipo" class="w-full px-3 py-1.5 bg-white border border-gray-300 rounded-md focus:border-udep-blue transition-all outline-none text-xs cursor-pointer">
+                                        <option value="Sobre">Sobre</option>
+                                        <option value="Doc. Legal">Doc. Legal</option>
+                                        <option value="Caja">Caja</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label class="block text-[10px] font-bold text-gray-500 uppercase mb-1">Prioridad</label>
+                                    <select id="prioridad" class="w-full px-3 py-1.5 bg-white border border-gray-300 rounded-md focus:border-udep-blue transition-all outline-none text-xs cursor-pointer">
+                                        <option value="Normal">Normal</option>
+                                        <option value="Urgente">Urgente</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+                        <button type="submit" class="w-full bg-udep-red hover:brightness-110 text-white font-bold py-2 rounded-md transition-all text-xs uppercase tracking-widest mt-4">
+                            REGISTRAR ENVÍO
+                        </button>
+                    </form>
+                </div>
+
+                <!-- Panel de Mapa -->
+                <div class="lg:col-span-2 bg-white rounded-xl shadow-sm border border-gray-100 flex flex-col relative overflow-hidden h-[300px]">
+                    <div class="p-4 border-b border-gray-50 shrink-0 flex justify-between items-center">
+                        <h4 class="font-bold text-[13px] text-udep-blue uppercase tracking-wide flex items-center gap-2">
+                             📍 Campus Piura - Mapa Satelital
+                        </h4>
+                        <div class="flex gap-2">
+                            <button onclick="zoomToCampus()" class="text-[10px] font-bold text-udep-blue hover:underline uppercase tracking-tighter">
+                                Centrar Campus
+                            </button>
+                        </div>
+                    </div>
+                    <div id="map" class="flex-1 relative z-0">
+                        <!-- Leaflet will mount here -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- Tabla de Gestión Fila 3 -->
+            <div class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden flex flex-col">
+                <div class="p-4 border-b border-gray-50 shrink-0 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                    <div class="flex items-center gap-4">
+                        <h4 class="font-bold text-[11px] lg:text-[13px] text-udep-blue uppercase tracking-wide">Gestión de Entregas</h4>
+                        <button onclick="optimizarRuta()" class="bg-udep-red hover:bg-red-700 text-white text-[10px] font-bold px-3 py-1.5 rounded-full flex items-center gap-1 transition-all shadow-sm">
+                            <span>⚡</span> <span class="hidden sm:inline">CALCULAR RUTA ÓPTIMA</span><span class="sm:hidden">OPTIMIZAR</span>
+                        </button>
+                    </div>
+                    
+                    <div class="flex flex-col sm:flex-row gap-3">
+                        <!-- Buscador -->
+                        <div class="flex items-center bg-gray-50 border border-gray-200 rounded-lg px-2 py-1.5 w-full sm:w-64 focus-within:border-udep-blue focus-within:bg-white transition-all">
+                            <span class="text-gray-400 mr-2 text-xs">🔍</span>
+                            <input 
+                                type="text" 
+                                id="search-input" 
+                                oninput="filtrarEnvios()"
+                                placeholder="Buscar por ID o Ubicación..." 
+                                class="bg-transparent border-none text-[12px] outline-none w-full text-gray-700"
+                            >
+                        </div>
+                        
+                        <!-- Filtro por Estado -->
+                        <div class="flex items-center">
+                            <label class="text-[10px] font-bold text-gray-400 uppercase mr-2">Estado:</label>
+                            <select 
+                                id="status-filter" 
+                                onchange="filtrarEnvios()"
+                                class="bg-gray-50 border border-gray-200 rounded-lg px-2 py-1.5 text-[12px] font-bold text-udep-blue outline-none cursor-pointer focus:border-udep-blue min-w-[100px] lg:min-w-[120px]"
+                            >
+                                <option value="Todos">Todos</option>
+                                <option value="Pendiente">Pendiente</option>
+                                <option value="En ruta">En Ruta</option>
+                                <option value="Entregado">Entregado</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+                <div class="overflow-x-auto custom-scrollbar flex-1 max-h-[400px]">
+                    <div id="empty-state" class="hidden p-12 text-center">
+                        <div class="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                            <svg class="w-8 h-8 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4"></path></svg>
+                        </div>
+                        <p class="text-gray-400 text-sm">No se encontraron registros con los filtros aplicados.</p>
+                    </div>
+                    <table class="w-full text-left border-collapse">
+                        <thead class="bg-gray-50 border-b border-gray-100 sticky top-0 z-10">
+                            <tr>
+                                <th class="px-5 py-3 text-[11px] font-bold text-gray-500 uppercase tracking-widest">ID</th>
+                                <th class="px-5 py-3 text-[11px] font-bold text-gray-500 uppercase tracking-widest">Origen</th>
+                                <th class="px-5 py-3 text-[11px] font-bold text-gray-500 uppercase tracking-widest">Destino</th>
+                                <th class="px-5 py-3 text-[11px] font-bold text-gray-500 uppercase tracking-widest">Tipo</th>
+                                <th class="px-5 py-3 text-[11px] font-bold text-gray-500 uppercase tracking-widest">Estado</th>
+                                <th class="px-5 py-3 text-[11px] font-bold text-gray-500 uppercase tracking-widest text-right">Acción</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tabla-envios" class="divide-y divide-gray-50">
+                            <!-- JS populated -->
+                        </tbody>
+                    </table>
+                </div>
+                <div id="empty-state" class="hidden p-12 text-center">
+                    <div class="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                        <svg class="w-8 h-8 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4"></path></svg>
+                    </div>
+                    <p class="text-gray-400 text-sm">No hay registros para mostrar hoy.</p>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        // --- Configuración GIS ---
+        const ubicacionesUDEP = {
+            "Edificio 80": {lat: -5.17751, lng: -80.63515},
+            "Edificio A-Instituto Confucio": {lat: -5.17731, lng: -80.63413},
+            "Edificio IME": {lat: -5.17631, lng: -80.63406},
+            "Centro de producción audiovisual (CPA)": {lat: -5.17587, lng: -80.63431},
+            "Edificio Comunicación": {lat: -5.17579, lng: -80.63478},
+            "Edificio Principal": {lat: -5.17662, lng: -80.63499},
+            "Edificio de Ingeniería Civil": {lat: -5.17679, lng: -80.63605},
+            "Edificio de Educación": {lat: -5.17758, lng: -80.63676},
+            "Edificio de Gobierno": {lat: -5.17905, lng: -80.63641},
+            "Edificio de Química": {lat: -5.17528, lng: -80.63749},
+            "Edificio de Derecho": {lat: -5.17478, lng: -80.63829},
+            "Bloque de Arquitectura": {lat: -5.17563, lng: -80.63743},
+            "Edificio E": {lat: -5.17541, lng: -80.63914},
+            "Bloque Ermita": {lat: -5.17924, lng: -80.63458},
+            "Bloque Pileta": {lat: -5.17714, lng: -80.63524},
+            "Complejo deportivo UDEP": {lat: -5.17343, lng: -80.63759},
+            "Playa 1 CP": {lat: -5.17768, lng: -80.63389},
+            "Bloque Cafetería Gutza": {lat: -5.17662, lng: -80.63649},
+            "Bloque Cafetería Sartén y Mango": {lat: -5.17690, lng: -80.63392},
+            "Edificio CMI": {lat: -5.17041, lng: -80.63868},
+            "Edificio de Hidráulica": {lat: -5.17665, lng: -80.63577},
+            "Playas de estacionamientos": {lat: -5.17403, lng: -80.63767},
+            "Polideportivo": {lat: -5.17333, lng: -80.63766},
+            "INICIO": {lat: -5.17551, lng: -80.63603}
+        };
+
+        // --- Estado Global ---
+        let envios = [
+            { id: 101, origen: 'Edificio 80', destino: 'Edificio E', tipo: 'Sobre', prioridad: 'Urgente', estado: 'Pendiente' },
+            { id: 102, origen: 'Edificio E', destino: 'Bloque de Arquitectura', tipo: 'Caja', prioridad: 'Normal', estado: 'En ruta' },
+            { id: 103, origen: 'Edificio Principal', destino: 'Centro de producción audiovisual (CPA)', tipo: 'Doc. Legal', prioridad: 'Urgente', estado: 'Entregado' },
+            { id: 104, origen: 'Edificio IME', destino: 'Edificio E', tipo: 'Sobre', prioridad: 'Normal', estado: 'Pendiente' }
+        ];
+
+        let map, mapMarkers = [], routeLine;
+        let notifications = [
+            { id: 1, title: 'Sistema Iniciado', message: 'Atlas Tracking está listo para operar.', time: 'Hace un momento', type: 'info' }
+        ];
+
+        // --- Funciones Responsivas ---
+        function toggleSidebar() {
+            const sidebar = document.getElementById('sidebar');
+            const overlay = document.getElementById('sidebar-overlay');
+            sidebar.classList.toggle('-translate-x-full');
+            overlay.classList.toggle('hidden');
+        }
+
+        // --- Gestión de Notificaciones ---
+        function toggleNotifications() {
+            const panel = document.getElementById('notif-panel');
+            panel.classList.toggle('hidden');
+        }
+
+        function addNotification(titulo, mensaje, tipo = 'alert') {
+            const now = new Date();
+            const timeStr = now.getHours() + ':' + now.getMinutes().toString().padStart(2, '0');
+            
+            notifications.unshift({
+                id: Date.now(),
+                title: titulo,
+                message: mensaje,
+                time: timeStr,
+                type: tipo
+            });
+            
+            if (notifications.length > 10) notifications.pop();
+            renderNotifications();
+        }
+
+        function renderNotifications() {
+            const list = document.getElementById('notif-list');
+            const badge = document.getElementById('notif-badge');
+            
+            badge.textContent = notifications.length;
+            badge.style.display = notifications.length > 0 ? 'block' : 'none';
+
+            if (notifications.length === 0) {
+                list.innerHTML = '<div class="p-8 text-center text-gray-400 text-xs">No hay notificaciones recientes.</div>';
+                return;
+            }
+
+            list.innerHTML = notifications.map(n => `
+                <div class="px-4 py-3 border-b border-gray-50 hover:bg-gray-50 transition-colors">
+                    <div class="flex justify-between items-start mb-0.5">
+                        <span class="text-[11px] font-bold text-gray-800">${n.title}</span>
+                        <span class="text-[9px] text-gray-400 font-medium">${n.time}</span>
+                    </div>
+                    <p class="text-[10px] text-gray-500 leading-tight">${n.message}</p>
+                </div>
+            `).join('');
+        }
+
+        function clearNotifications() {
+            notifications = [];
+            renderNotifications();
+        }
+
+        // Cerrar panel al hacer clic fuera
+        window.addEventListener('click', (e) => {
+            const panel = document.getElementById('notif-panel');
+            const bell = panel.previousElementSibling;
+            if (!panel.contains(e.target) && !bell.contains(e.target)) {
+                panel.classList.add('hidden');
+            }
+        });
+
+        // --- Inicialización de Mapa ---
+        function initMap() {
+            map = L.map('map').setView([-5.17551, -80.63603], 17);
+            
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
+            }).addTo(map);
+
+            // Marcador de Inicio
+            L.marker([-5.17551, -80.63603], {
+                icon: L.divIcon({
+                    className: 'custom-div-icon',
+                    html: "<div style='background-color:#9e1b32; width:12px; height:12px; border-radius:50%; border:2px solid white; box-shadow:0 0 5px rgba(0,0,0,0.3)'></div>",
+                    iconSize: [12, 12],
+                    iconAnchor: [6, 6]
+                })
+            }).addTo(map).bindPopup("<b>BUNKER INICIO</b><br>Punto de partida logística");
+
+            updateMapVisuals();
+        }
+
+        function zoomToCampus() {
+            map.setView([-5.17551, -80.63603], 17);
+        }
+
+        function updateMapVisuals() {
+            // Limpiar marcadores y líneas previas
+            mapMarkers.forEach(m => map.removeLayer(m));
+            mapMarkers = [];
+            if (routeLine) map.removeLayer(routeLine);
+
+            const routeCoords = [[-5.17551, -80.63603]]; // Empezar en INICIO
+
+            // Filtrar envios pendientes y en ruta para mostrar en mapa
+            const activos = envios.filter(e => e.estado !== 'Entregado');
+            
+            activos.forEach(envio => {
+                const ubi = ubicacionesUDEP[envio.destino];
+                if (ubi) {
+                    const marker = L.marker([ubi.lat, ubi.lng]).addTo(map)
+                        .bindPopup(`<b>Envío #${envio.id}</b><br>Destino: ${envio.destino}<br>Estado: ${envio.estado}`);
+                    mapMarkers.push(marker);
+                    routeCoords.push([ubi.lat, ubi.lng]);
+                }
+            });
+
+            if (routeCoords.length > 1) {
+                routeLine = L.polyline(routeCoords, {color: '#9e1b32', weight: 3, dashArray: '5, 10'}).addTo(map);
+            }
+        }
+
+        // --- Algoritmo de Optimización: Vecino más Cercano ---
+        function calcularDistancia(p1, p2) {
+            return Math.sqrt(Math.pow(p2.lat - p1.lat, 2) + Math.pow(p2.lng - p1.lng, 2));
+        }
+
+        function optimizarRuta() {
+            const pendientes = envios.filter(e => e.estado === 'Pendiente');
+            const enRuta = envios.filter(e => e.estado === 'En ruta');
+            const entregados = envios.filter(e => e.estado === 'Entregado');
+
+            if (pendientes.length === 0 && enRuta.length === 0) {
+                alert("No hay envíos activos (Pendientes o En Ruta) para optimizar.");
+                return;
+            }
+
+            let actuales = [...pendientes, ...enRuta];
+            let rutaOptimizada = [];
+            let puntoActual = ubicacionesUDEP["INICIO"];
+
+            while (actuales.length > 0) {
+                let masCercanoIdx = -1;
+                let distanciaMinima = Infinity;
+
+                actuales.forEach((envio, index) => {
+                    const ubi = ubicacionesUDEP[envio.destino];
+                    if (ubi) {
+                        const d = calcularDistancia(puntoActual, ubi);
+                        if (d < distanciaMinima) {
+                            distanciaMinima = d;
+                            masCercanoIdx = index;
+                        }
+                    }
+                });
+
+                if (masCercanoIdx !== -1) {
+                    rutaOptimizada.push(actuales[masCercanoIdx]);
+                    puntoActual = ubicacionesUDEP[actuales[masCercanoIdx].destino];
+                    actuales.splice(masCercanoIdx, 1);
+                } else {
+                    rutaOptimizada.push(actuales.shift());
+                }
+            }
+
+            envios = [...rutaOptimizada, ...entregados];
+            
+            filtrarEnvios();
+            updateMapVisuals();
+
+            // Notify
+            addNotification("Ruta Optimizada", `Se han reordenado ${rutaOptimizada.length} envíos activos para eficiencia máxima.`, "success");
+            mostrarToast("Ruta Optimizada", "Los envíos se reordenaron por cercanía geográfica.");
+        }
+
+        function mostrarToast(titulo, mensaje) {
+            const alertDiv = document.createElement('div');
+            alertDiv.className = 'fixed bottom-8 right-8 bg-udep-blue text-white px-6 py-4 rounded-2xl shadow-2xl flex items-center gap-3 z-50 transform translate-y-20 transition-all duration-500';
+            alertDiv.innerHTML = `
+                <div class="bg-white/20 p-2 rounded-full">⚡</div>
+                <div>
+                    <p class="font-bold">${titulo}</p>
+                    <p class="text-xs opacity-90">${mensaje}</p>
+                </div>
+            `;
+            document.body.appendChild(alertDiv);
+            setTimeout(() => alertDiv.classList.remove('translate-y-20'), 100);
+            setTimeout(() => {
+                alertDiv.classList.add('translate-y-20');
+                setTimeout(() => alertDiv.remove(), 500);
+            }, 4000);
+        }
+
+        // --- Selectores DOM ---
+        const tablaBody = document.getElementById('tabla-envios');
+        const emptyState = document.getElementById('empty-state');
+        const form = document.getElementById('registro-form');
+
+        // KPIs Selectors
+        const kpiTotal = document.getElementById('kpi-total');
+        const kpiPending = document.getElementById('kpi-pending');
+        const kpiRoute = document.getElementById('kpi-route');
+        const kpiDelivered = document.getElementById('kpi-delivered');
+
+        // --- Funciones Principales ---
+
+        function filtrarEnvios() {
+            const query = document.getElementById('search-input').value.toLowerCase().trim();
+            const filter = document.getElementById('status-filter').value;
+
+            const filtrados = envios.filter(envio => {
+                const matchesSearch = 
+                    envio.id.toString().includes(query) || 
+                    envio.origen.toLowerCase().includes(query) || 
+                    envio.destino.toLowerCase().includes(query);
+                
+                const matchesStatus = filter === 'Todos' || envio.estado === filter;
+
+                return matchesSearch && matchesStatus;
+            });
+
+            renderTabla(filtrados);
+        }
+
+        function renderTabla(listaParam) {
+            // Fix: ensure we handle both array input and the Event object from DOMContentLoaded
+            const listaEnvios = Array.isArray(listaParam) ? listaParam : envios;
+
+            tablaBody.innerHTML = '';
+            const emptyState = document.getElementById('empty-state');
+            
+            if (listaEnvios.length === 0) {
+                emptyState.classList.remove('hidden');
+                actualizarKPIs();
+                return;
+            } else {
+                emptyState.classList.add('hidden');
+            }
+
+            listaEnvios.forEach(envio => {
+                const tr = document.createElement('tr');
+                tr.className = 'hover:bg-gray-50 transition-colors bg-white';
+
+                // Determinar el estilo del badge y el menú de acciones según estado
+                let badgeClass = '';
+                let actionMenu = '';
+
+                const selectStyles = 'bg-gray-50 border border-gray-300 text-gray-700 text-[10px] font-bold rounded focus:ring-udep-blue focus:border-udep-blue block w-full p-1.5 uppercase cursor-pointer outline-none transition-all';
+
+                if (envio.estado === 'Pendiente') {
+                    badgeClass = 'bg-[#fef3c7] text-[#92400e]';
+                    actionMenu = `
+                        <select onchange="if(this.value) cambiarEstado(${envio.id}, this.value)" class="${selectStyles}">
+                            <option value="" selected disabled>Seleccionar Acción</option>
+                            <option value="En ruta">Asignar / Recoger</option>
+                        </select>
+                    `;
+                } else if (envio.estado === 'En ruta') {
+                    badgeClass = 'bg-[#dbeafe] text-[#1e40af]';
+                    actionMenu = `
+                        <select onchange="if(this.value) cambiarEstado(${envio.id}, this.value)" class="${selectStyles}">
+                            <option value="" selected disabled>Seleccionar Acción</option>
+                            <option value="Entregado">Confirmar Entrega</option>
+                            <option value="Pendiente">Revertir a Pendiente</option>
+                        </select>
+                    `;
+                } else if (envio.estado === 'Entregado') {
+                    badgeClass = 'bg-[#dcfce7] text-[#166534]';
+                    actionMenu = `<div class="flex items-center justify-end gap-1 text-[11px] text-[#166534] font-bold">
+                        <span>✓ COMPLETADO</span>
+                    </div>`;
+                }
+
+                tr.innerHTML = `
+                    <td class="px-5 py-3 text-[13px] font-bold text-gray-700">#${envio.id}</td>
+                    <td class="px-5 py-3 text-[13px] text-gray-600">${envio.origen}</td>
+                    <td class="px-5 py-3 text-[13px] text-gray-600">${envio.destino}</td>
+                    <td class="px-5 py-3 text-[13px] text-gray-600">
+                        ${envio.tipo}
+                        ${envio.prioridad === 'Urgente' ? '<span class="ml-1 text-[9px] bg-red-50 text-red-600 px-1 rounded font-bold border border-red-100">URGENTE</span>' : ''}
+                    </td>
+                    <td class="px-5 py-3">
+                        <span class="px-2 py-1 rounded text-[10px] font-bold uppercase ${badgeClass} inline-block">
+                            ${envio.estado}
+                        </span>
+                    </td>
+                    <td class="px-5 py-3 text-right max-w-[150px]">
+                        ${actionMenu}
+                    </td>
+                `;
+                tablaBody.appendChild(tr);
+            });
+
+            actualizarKPIs();
+        }
+
+        function actualizarKPIs() {
+            const total = envios.length;
+            const pending = envios.filter(e => e.estado === 'Pendiente').length;
+            const route = envios.filter(e => e.estado === 'En ruta').length;
+            const delivered = envios.filter(e => e.estado === 'Entregado').length;
+
+            kpiTotal.textContent = total;
+            kpiPending.textContent = pending;
+            kpiRoute.textContent = route;
+            kpiDelivered.textContent = delivered;
+
+            // Animación pequeña al actualizar
+            [kpiTotal, kpiPending, kpiRoute, kpiDelivered].forEach(kpi => {
+                kpi.parentNode.classList.add('scale-110');
+                setTimeout(() => kpi.parentNode.classList.remove('scale-110'), 200);
+            });
+        }
+
+        function cambiarEstado(id, nuevoEstado) {
+            const index = envios.findIndex(e => e.id === id);
+            if (index !== -1) {
+                const anterior = envios[index].estado;
+                envios[index].estado = nuevoEstado;
+                
+                // Notify
+                let msg = `Pedido #${id} cambió de ${anterior} a ${nuevoEstado}.`;
+                if (nuevoEstado === 'En ruta') msg = `El conserje ha recogido el pedido #${id} y está en camino.`;
+                if (nuevoEstado === 'Entregado') msg = `El conserje ha entregado con éxito el pedido #${id}.`;
+                
+                addNotification("Cambio de Estado", msg, "info");
+                
+                filtrarEnvios();
+                updateMapVisuals();
+            }
+        }
+
+        // --- Manejo de Formulario ---
+        form.addEventListener('submit', (e) => {
+            e.preventDefault();
+
+            const nuevoEnvio = {
+                id: Math.max(...envios.map(e => e.id), 100) + 1,
+                origen: document.getElementById('origen').value,
+                destino: document.getElementById('destino').value,
+                tipo: document.getElementById('tipo').value,
+                prioridad: document.getElementById('prioridad').value,
+                estado: 'Pendiente'
+            };
+
+            // Agregar al inicio para que se vea primero
+            envios.unshift(nuevoEnvio);
+            
+            // Notify
+            addNotification("Nuevo Envío", `Se registró un pedido (${nuevoEnvio.tipo}) desde ${nuevoEnvio.origen} hacia ${nuevoEnvio.destino}.`, "alert");
+
+            // UI Feedback
+            filtrarEnvios();
+            form.reset();
+            
+            // Alert personalizado sim
+            const alertDiv = document.createElement('div');
+            alertDiv.className = 'fixed bottom-8 right-8 bg-green-600 text-white px-6 py-4 rounded-2xl shadow-2xl flex items-center gap-3 z-50 transform translate-y-20 transition-all duration-500';
+            alertDiv.innerHTML = `
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                <div>
+                    <p class="font-bold">Registro Exitoso</p>
+                    <p class="text-xs opacity-90">Envío #${nuevoEnvio.id} guardado correctamente.</p>
+                </div>
+            `;
+            document.body.appendChild(alertDiv);
+            
+            setTimeout(() => {
+                alertDiv.classList.remove('translate-y-20');
+            }, 100);
+
+            setTimeout(() => {
+                alertDiv.classList.add('translate-y-20');
+                setTimeout(() => alertDiv.remove(), 500);
+            }, 4000);
+        });
+
+        // Inicializar
+        document.addEventListener('DOMContentLoaded', () => {
+            // Popular selectores dinámicamente
+            const buildings = Object.keys(ubicacionesUDEP).filter(b => b !== 'INICIO').sort();
+            const selects = [document.getElementById('origen'), document.getElementById('destino')];
+            
+            selects.forEach(sel => {
+                const currentVal = sel.value;
+                sel.innerHTML = '<option value="" disabled selected>Seleccione un edificio...</option>';
+                buildings.forEach(b => {
+                    const opt = document.createElement('option');
+                    opt.value = b;
+                    opt.textContent = b;
+                    sel.appendChild(opt);
+                });
+                if (currentVal) sel.value = currentVal;
+            });
+
+            initMap();
+            renderTabla();
+            renderNotifications();
+        });
+
+    </script>
+</body>
+</html>
